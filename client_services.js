@@ -1,6 +1,6 @@
 $(document).ready(function(){
-  nodeCollection.init(data);
-  treeView.init($('.tree'), nodeCollection.nodes);
+  root.init(data);
+  treeView.init($('.tree'), root);
 });
 
 function NodeView(node) {
@@ -23,7 +23,6 @@ NodeView.prototype.renderChildren = function(e) {
     if (this.model.childNodes.length > 0) {
       this.$el.append("<ul></ul>");
       for (var i in this.model.childNodes) {
-        console.log(this.model.childNodes[i])
         var nodeView = new NodeView(this.model.childNodes[i]);
         this.$el.children("ul").append(nodeView.render())
       }
@@ -41,7 +40,7 @@ NodeView.prototype.render = function() {
 var treeView = {
   init: function(el, collection) {
     this.$el = el;
-    this.collection = collection;
+    this.collection = collection.nodes;
     this.render();
   },
 
@@ -50,35 +49,21 @@ var treeView = {
       this.$el.append(new NodeView(this.collection[i]).render());
     }
   },
-
-  renderNode: function(node) {
-    return "<li class='node' data-id=" + node.id + ">" + node.title + "</li>"
-  }
 }
 
-var nodeCollection = {
+var root = {
   nodes: [],
 
   init: function(data) {
-    this.load(data);
+    this.load(data, data.topLevelItems, this.nodes);
   },
 
-  //TODO: refactor into one recursive load method
-  load: function(data) {
-    for (var i in data.topLevelItems) {
-      var parent = new Node(data.topLevelItems[i], data.items[data.topLevelItems[i]]);
-      this.nodes.push(parent);
-      this.buildChildren(parent, data)
-    }
-  },
-
-  buildChildren: function(parent, data) {
-    for (var i in parent.childIds) {
-      var id = parent.childIds[i];
-      if (data.items[id]) {
-        var child = new Node(id, data.items[id]);
-        parent.childNodes.push(child);
-        this.buildChildren(child, data);
+  load: function(data, ids, container) {
+    for (var i in ids) {
+      if (data.items[ids[i]]) {
+        var parent = new Node(ids[i], data.items[ids[i]]);
+        container.push(parent);
+        this.load(data, parent.childIds, parent.childNodes)
       }
     }
   },
